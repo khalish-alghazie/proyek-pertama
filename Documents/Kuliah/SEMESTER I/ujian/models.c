@@ -133,3 +133,182 @@ int tambahPinjamKeMemori(Peminjaman p)
 
     return 1;
 }
+// Membaca data buku dari file
+static int muatBuku(void)
+{
+    FILE *f = fopen(FILE_BUKU, "r");
+
+    char baris[2048];
+    char tahun[32], halaman[32], stok[32];
+
+    int pos; // menyimpan posisi karakter yang sedang dibaca
+    Buku b;  // untuk menampung data buku sementara
+
+    if (f == NULL)
+    {
+        printf("File %s tidak ditemukan.\n", FILE_BUKU);
+        return 0;
+    }
+
+    while (fgets(baris, sizeof(baris), f) != NULL) // fgets(variabel_tujuan, ukuran_maksimal, file);
+    {
+
+        // Mulai membaca dari karakter pertama
+        // Karena setiap kali membaca baris baru, kita harus memulai pengambilan kata dari karakter pertama.
+        pos = 0;
+
+        if (ambilKata(baris, &pos, b.ocaid, sizeof(b.ocaid)) &&
+            ambilKata(baris, &pos, b.title, sizeof(b.title)) &&
+            ambilKata(baris, &pos, b.author, sizeof(b.author)) &&
+            ambilKata(baris, &pos, tahun, sizeof(tahun)) &&
+            ambilKata(baris, &pos, halaman, sizeof(halaman)) &&
+            ambilKata(baris, &pos, b.openlibrary_edition, sizeof(b.openlibrary_edition)) &&
+            ambilKata(baris, &pos, b.openlibrary_work, sizeof(b.openlibrary_work)) &&
+            ambilKata(baris, &pos, b.full_text_url, sizeof(b.full_text_url)))
+        {
+
+            // Lewati baris judul kolom
+            if (strcmp(b.ocaid, "ocaid") == 0)
+            {
+                continue;
+            }
+
+            // Ubah teks menjadi angka
+            b.year = atoi(tahun);
+            b.page_count = atoi(halaman);
+
+            // Ambil stok buku
+            if (ambilKata(baris, &pos, stok, sizeof(stok)))
+            {
+                b.stok = atoi(stok);
+            }
+            else
+            {
+                b.stok = STOK_AWAL;
+            }
+
+            // Simpan buku ke memori
+            if (!tambahBukuKeMemori(b))
+            {
+                printf("Memori tidak cukup.\n");
+                fclose(f);
+                return 0;
+            }
+        }
+    }
+
+    fclose(f);
+    return 1;
+}
+
+// Membaca data user dari file
+static int muatUser(void)
+{
+    FILE *f = fopen(FILE_USER, "r");
+
+    char baris[256];
+    int pos;
+
+    User u;
+
+    if (f == NULL)
+    {
+        printf("File %s tidak ditemukan.\n", FILE_USER);
+        return 0;
+    }
+
+    while (fgets(baris, sizeof(baris), f) != NULL)
+    {
+
+        // Mulai dari karakter pertama
+        pos = 0;
+
+        if (ambilKata(baris, &pos, u.username, sizeof(u.username)) &&
+            ambilKata(baris, &pos, u.password, sizeof(u.password)) &&
+            ambilKata(baris, &pos, u.role, sizeof(u.role)))
+        {
+
+            // Lewati baris judul kolom
+            if (strcmp(u.username, "username") == 0)
+            {
+                continue;
+            }
+
+            // Simpan user ke memori
+            if (!tambahUserKeMemori(u))
+            {
+                printf("Memori tidak cukup.\n");
+                fclose(f);
+                return 0;
+            }
+        }
+    }
+
+    fclose(f);
+    return 1; // menandakan berhasil
+}
+
+// Membaca data peminjaman dari file
+static int muatPinjam(void)
+{
+    FILE *f = fopen(FILE_PINJAM, "r");
+
+    char baris[256];
+    char id[32];
+
+    int pos;
+    Peminjaman pj;
+
+    // Jika file belum ada, anggap belum ada transaksi
+    if (f == NULL)
+    {
+        return 1;
+    }
+
+    while (fgets(baris, sizeof(baris), f) != NULL)
+    {
+
+        // Mulai dari karakter pertama
+        pos = 0;
+
+        if (ambilKata(baris, &pos, id, sizeof(id)) &&
+            ambilKata(baris, &pos, pj.username, sizeof(pj.username)) &&
+            ambilKata(baris, &pos, pj.ocaid, sizeof(pj.ocaid)) &&
+            ambilKata(baris, &pos, pj.tanggal_pinjam, sizeof(pj.tanggal_pinjam)) &&
+            ambilKata(baris, &pos, pj.status, sizeof(pj.status)))
+        {
+
+            // Lewati baris judul kolom
+            if (strcmp(id, "id_peminjaman") == 0)
+            {
+                continue;
+            }
+
+            // Ubah ID menjadi angka
+            pj.id_peminjaman = (unsigned int)atoi(id);
+
+            // Simpan peminjaman ke memori
+            if (!tambahPinjamKeMemori(pj))
+            {
+                printf("Memori tidak cukup.\n");
+                fclose(f);
+                return 0;
+            }
+        }
+    }
+
+    fclose(f);
+    return 1;
+}
+
+// Memuat semua data dari file
+int muatSemuaData(void)
+{
+    if (!muatBuku() || !muatUser() || !muatPinjam())
+    {
+        bebaskanSemuaData();
+        return 0;
+    }
+
+    return 1;
+}
