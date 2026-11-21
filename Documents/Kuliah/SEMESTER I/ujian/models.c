@@ -312,3 +312,79 @@ int muatSemuaData(void)
 
     return 1;
 }
+// Menyimpan data buku ke file
+void simpanBuku(void)
+{
+    FILE *f = fopen(FILE_BUKU, "w");
+    int i;
+
+    if (f == NULL)
+    {
+        printf("Gagal menulis %s\n", FILE_BUKU);
+        return;
+    }
+
+    fprintf(f, "ocaid title author year page_count openlibrary_edition "
+               "openlibrary_work full_text_url stok\n");
+
+    for (i = 0; i < jumlahBuku; i++)
+    {
+        fprintf(f, "%s \"%s\" \"%s\" %d %d %s %s %s %d\n",
+                dataBuku[i].ocaid,
+                dataBuku[i].title,
+                dataBuku[i].author,
+                dataBuku[i].year,
+                dataBuku[i].page_count,
+                dataBuku[i].openlibrary_edition,
+                dataBuku[i].openlibrary_work,
+                dataBuku[i].full_text_url,
+                dataBuku[i].stok);
+    }
+
+    fclose(f);
+}
+
+// Menyimpan data peminjaman ke file
+void simpanPinjam(void)
+{
+    FILE *f = fopen(FILE_PINJAM, "w");
+    int i;
+
+    if (f == NULL)
+    {
+        printf("Gagal menulis %s\n", FILE_PINJAM);
+        return;
+    }
+
+    fprintf(f, "id_peminjaman username ocaid tanggal_pinjam status\n");
+
+    for (i = 0; i < jumlahPinjam; i++)
+    {
+        fprintf(f, "%u %s %s %s %s\n",
+                dataPinjam[i].id_peminjaman,
+                dataPinjam[i].username,
+                dataPinjam[i].ocaid,
+                dataPinjam[i].tanggal_pinjam,
+                dataPinjam[i].status);
+    }
+
+    fclose(f);
+}
+
+// Membebaskan semua memori yang digunakan
+void bebaskanSemuaData(void)
+{
+    // realloc() untuk menambah kapasitas penyimpanan data buku. Ketika data tersebut sudah tidak diperlukan, memorinya bisa dibebaskan menggunakan free().
+    free(dataBuku);
+    free(dataUser);
+    free(dataPinjam);
+
+    // mengatur pointer dataBuku, dataUser, dan dataPinjam menjadi NULL, supaya tidak menyimpan alamat lama yang sudah tidak boleh digunakan.
+    dataBuku = NULL;
+    dataUser = NULL;
+    dataPinjam = NULL;
+
+    jumlahBuku = 0;
+    jumlahUser = 0;
+    jumlahPinjam = 0;
+}
